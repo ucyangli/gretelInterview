@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, configureStore } from '@reduxjs/toolkit';
-import {Event , Resident} from './types'
+import { createSlice, createAsyncThunk, configureStore,PayloadAction } from '@reduxjs/toolkit';
+import {Event , Resident} from '../types'
 
 
 interface EventsState {
@@ -10,14 +10,10 @@ interface EventsState {
 
 interface ResidentsState {
   residents: Resident[];
+  loading: boolean;
+  error: string | null;
 }
 
-const initialState: EventsState & ResidentsState = {
-  events: [],
-  loading: false,
-  error: null,
-  residents: [],
-};
 
 export const fetchEvents = createAsyncThunk('events/fetch', async () => {
   // Mocked event data
@@ -46,6 +42,14 @@ export const fetchEvents = createAsyncThunk('events/fetch', async () => {
       roomId: 22,
       residentId: 26,
     },
+    {
+      id: 4,
+      type: 'Emergency',
+      datetime: 1684477599,
+      status: 'active',
+      roomId: 15,
+      residentId: 11,
+    },
   ];
 
   return events;
@@ -68,16 +72,35 @@ export const fetchResidents = createAsyncThunk('residents/fetch', async () => {
       id: 19,
       name: 'Chris',
       age: 88,
+    },
+    {
+      id: 11,
+      name: 'Momo',
+      age: 52,
     }
   ];
   return residents;
 });
 
 
+
+
 const eventsSlice = createSlice({
   name: 'events',
-  initialState,
-  reducers: {},
+  initialState : {
+    events: [],
+    loading: false,
+    error: null,
+  } as  EventsState ,
+  reducers: {
+    updateEventStatus: (state, action: PayloadAction<{ eventId: number }>) => {
+      const { eventId } = action.payload;
+      const event = state.events.find((e) => e.id === eventId);
+      if (event) {
+        event.status = 'done';
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchEvents.pending, (state) => {
@@ -92,6 +115,21 @@ const eventsSlice = createSlice({
         state.loading = false;
         state.error = action.error.message ?? 'Failed to fetch events.';
       })
+  },
+});
+
+
+
+const residentsSlice = createSlice({
+  name: 'residents',
+  initialState: {
+    residents: [],
+    loading: false,
+    error: null,
+  } as  ResidentsState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
       .addCase(fetchResidents.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -113,8 +151,10 @@ const eventsSlice = createSlice({
 export const store = configureStore({
   reducer: {
     events: eventsSlice.reducer,
+    residents: residentsSlice.reducer,
   },
 });
 
+export const { updateEventStatus } = eventsSlice.actions;
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

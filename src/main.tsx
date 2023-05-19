@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 
 import { Provider } from 'react-redux';
-import { store } from './store.tsx';
+import { store } from './store/index.tsx';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <Provider store={store}>
