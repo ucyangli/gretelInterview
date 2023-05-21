@@ -1,14 +1,16 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store";
-import { TableCell, TableRow, Button, styled } from '@mui/material';
+import { Grid, Paper, ButtonBase, styled } from '@mui/material';
 import { Event } from "../../types";
 import { red } from '@mui/material/colors';
 import { updateEventStatus } from "../../store";
 
 
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontSize: '2rem',
+const Item = styled(Paper)(({ theme }) => ({
+  ...theme.typography.body2,
+  padding: theme.spacing(4),
+  minWidth: 200
 }));
 
 
@@ -43,7 +45,6 @@ const EventItem: React.FC<{ event: Event; residentName?: string }> = ({ event, r
       const timeDifferenceText = getTimeDifferenceText(difference);
       setTimeDifference(timeDifferenceText);
     }, 1000);
-
     return () => {
       clearInterval(intervalId);
     };
@@ -51,14 +52,14 @@ const EventItem: React.FC<{ event: Event; residentName?: string }> = ({ event, r
 
   const dispatch = useDispatch<AppDispatch>();
 
-  let rowColor = '';
+  let eventColor = '';
 
   if (event.status === 'done') {
-    rowColor = '#f5f5f5'; // Grey color
+    eventColor = '#f5f5f5'; // Grey color
   } else if (event.type === 'Emergency') {
-    rowColor = red[500];
+    eventColor = red[500];
   } else if (event.type === 'Assistance') {
-    rowColor = 'primary.light';
+    eventColor = 'primary.light';
   }
 
 
@@ -66,20 +67,21 @@ const EventItem: React.FC<{ event: Event; residentName?: string }> = ({ event, r
     dispatch(updateEventStatus({ eventId: event.id }));
   };
   return (
-    <TableRow sx={{ backgroundColor: rowColor }}>
-      <StyledTableCell>{residentName}</StyledTableCell>
-      <StyledTableCell>{event.roomId}</StyledTableCell>
-      <StyledTableCell >{event.type}</StyledTableCell>
-      <StyledTableCell>{event.status}</StyledTableCell>
-      <StyledTableCell>{timeDifference}</StyledTableCell>
-      {!(event.status === 'done') && (
-        <TableCell>
-          <Button variant="outlined" color="inherit" onClick={handleStatusChange}>
-            Mark Done
-          </Button>
-        </TableCell>
-      )}
-    </TableRow>
+    <Grid item  xs={6} sm={4} md={3} lg={2}>
+    <ButtonBase
+      onClick={() => handleStatusChange()}
+      disabled={event.status === 'done'}
+    >
+      <Item square={true} sx={{
+        backgroundColor: eventColor,
+        mx: 2,
+      }} >
+        <div>Resident: {residentName}</div>
+        <div>Room ID: {event.roomId}</div>
+        <div> {timeDifference}</div>
+      </Item>
+    </ButtonBase> 
+    </Grid>
   );
 };
 

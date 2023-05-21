@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, fetchEvents, fetchResidents, AppDispatch } from '../../store';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
-import TablePagination from '@mui/material/TablePagination';
+import { Box, Grid, Pagination ,useMediaQuery, useTheme } from '@mui/material';
 import EventItem from '../../component/EventItem'
 
 
@@ -16,70 +15,58 @@ const EventPage = () => {
     dispatch(fetchResidents());
   }, [dispatch]);
 
+  const theme = useTheme();
+  const isLg = useMediaQuery(theme.breakpoints.up('lg'));
+  const isMd = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  const isSm = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
+  const itemsPerPage = isLg ? 36 : isMd ? 24 : isSm ? 18 : 12;
+
+
+  console.log(itemsPerPage)
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
-  };
 
-  // Sort the events to display the Emergency ones on top, Done ones on the bottom
-  const sortedEvents = [...events].sort((a, b) => {
-    if (a.status === 'done' && b.status !== 'done') {
-      return 1;
-    } else if (a.status !== 'done' && b.status === 'done') {
-      return -1;
-    } else if (a.type === 'Emergency' && b.type !== 'Emergency') {
-      return -1;
-    } else if (a.type !== 'Emergency' && b.type === 'Emergency') {
-      return 1;
-    }
-    return 0;
-  });
+  const sortedEvents = [...events]
+    //get rid off done events
+    .filter((event) => event.status !== 'done')
+    .sort((a, b) => {
+      // Sort by type (Emergency first)
+      if (a.type === 'Emergency' && b.type !== 'Emergency') return -1;
+      if (a.type !== 'Emergency' && b.type === 'Emergency') return 1;
+      // Sort by datetime (ealiest first)
+      return a.datetime - b.datetime;
+    });
+
+  const paginationEvents = sortedEvents.slice(page * itemsPerPage, page * itemsPerPage + itemsPerPage)
 
   return (
-    <Paper sx={{ width: '100%' }}>
-      <h1>Open Events</h1>
-      <TableContainer component={Paper}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>Resident Name</TableCell>
-              <TableCell>Room ID</TableCell>
-              <TableCell>Event Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Date & Time</TableCell>
-              <TableCell>Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedEvents
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+    <>
+      <Box sx={{ minHeight: 'calc(100vh - 100px)' }}>
+        {paginationEvents.length === 0 ?
+          <div>No active events</div> :
+          <Grid container spacing={4}>
+            {paginationEvents
               .map((event) => {
                 const resident = residents.find((r) => r.id === event.residentId);
                 const residentName = resident ? resident.name : 'Unknown Resident';
-
                 return <EventItem key={event.id} event={event} residentName={residentName} />;
               })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={[10, 25, 100]}
-        component="div"
-        count={events.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-    </Paper>
+          </Grid>}
+      </Box >
+      <Box sx={{ height: '100px', display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+        <Pagination
+          count={Math.ceil(events.length / itemsPerPage)}
+          page={page}
+          onChange={handleChangePage}
+          style={{ marginTop: '16px' }}
+        />
+      </Box>
+    </>
   );
 }
 
